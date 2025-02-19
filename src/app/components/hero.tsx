@@ -11,7 +11,7 @@ const Hero = () => {
       from: "Downtown",
       to: "Airport",
       date: "Today, 2:00 PM",
-      price: "$25",
+      price: "Rs.300",
       seats: 3,
       icon: Car
     },
@@ -20,7 +20,7 @@ const Hero = () => {
       from: "University",
       to: "Shopping Mall",
       date: "Today, 3:30 PM",
-      price: "$15",
+      price: "Rs.300",
       seats: 2,
       icon: Car
     },
@@ -29,7 +29,7 @@ const Hero = () => {
       from: "Beach",
       to: "City Center",
       date: "Today, 4:00 PM",
-      price: "$20",
+      price: "Rs.300",
       seats: 4,
       icon: Car
     },
@@ -38,7 +38,7 @@ const Hero = () => {
       from: "Suburbs",
       to: "Concert Hall",
       date: "Today, 5:30 PM",
-      price: "$18",
+      price: "Rs.300",
       seats: 3,
       icon: Car
     }
@@ -50,7 +50,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 pb-8">
+    <div className=" bg-gray-50 pt-24 pb-8">
       {/* Hero Text */}
       <div className="text-center mb-12 px-4">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
