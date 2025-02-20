@@ -7,7 +7,6 @@ import { Menu, X, Search } from 'lucide-react';
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navItems = [
-        { label: 'Create A Ride', href: '/creation' },
         { label: 'Details', href: '/details' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'About', href: '/about' },
@@ -15,7 +14,7 @@ const Navbar = () => {
 
     return (
         <nav className="fixed top-0 w-full z-[999] bg-white shadow-md">
-            <div className="mx-auto lg:mx-20 px-4">
+            <div className="mx-auto px-4">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <div className="flex-shrink-0">
@@ -25,7 +24,7 @@ const Navbar = () => {
                     </div>
 
                     {/* Search Bar - Hidden on mobile */}
-                    <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
+                    <div className="hidden md:flex items-center flex-1 max-w-md px-10">
                         <div className="relative w-full">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Search className="h-5 w-5 text-gray-400" />

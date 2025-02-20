@@ -1,0 +1,121 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  phoneNumber   String?
+  profileImage  String?
+  rating        Float?    @default(0)
+  reviews       Review[]  @relation("ReceivedReviews")
+  givenReviews  Review[]  @relation("GivenReviews")
+  vehicle       Vehicle?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  ridesOffered  Ride[]    @relation("DriverRides")
+  ridesBooked   Booking[] @relation("PassengerBookings")
+  preferences   UserPreferences?
+}
+
+model UserPreferences {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @unique
+  musicAllowed  Boolean   @default(true)
+  smokingAllowed Boolean  @default(false)
+  petsAllowed   Boolean   @default(true)
+  maxPassengers Int       @default(4)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Vehicle {
+  id          String    @id @default(cuid())
+  make        String
+  model       String
+  year        Int
+  color       String
+  licensePlate String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Ride {
+  id          String    @id @default(cuid())
+  from        String
+  to          String
+  date        DateTime
+  time        String
+  seats       Int
+  price       Float
+  description String?
+  recurring   Boolean   @default(false)
+  frequency   RideFrequency?
+  smoking     Boolean   @default(false)
+  pets        Boolean   @default(false)
+  music       Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  driver      User      @relation("DriverRides", fields: [driverId], references: [id])
+  driverId    String
+  bookings    Booking[]
+  available   Boolean   @default(true)
+  reviews     Review[]
+}
+
+model Booking {
+  id          String    @id @default(cuid())
+  ride        Ride      @relation(fields: [rideId], references: [id])
+  rideId      String
+  passenger   User      @relation("PassengerBookings", fields: [passengerId], references: [id])
+  passengerId String
+  seats       Int       @default(1)
+  status      BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  rating      Int
+  comment     String?
+  ride        Ride      @relation(fields: [rideId], references: [id])
+  rideId      String
+  reviewer    User      @relation("GivenReviews", fields: [reviewerId], references: [id])
+  reviewerId  String
+  reviewed    User      @relation("ReceivedReviews", fields: [reviewedId], references: [id])
+  reviewedId  String
+  createdAt   DateTime  @default(now())
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum RideFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
