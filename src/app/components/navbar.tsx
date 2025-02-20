@@ -9,7 +9,6 @@ const Navbar = () => {
     const navItems = [
         { label: 'Create A Ride', href: '/creation' },
         { label: 'Details', href: '/details' },
-        { label: 'Contact', href: '/' }
     ];
 
     return (
