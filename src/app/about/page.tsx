@@ -56,15 +56,22 @@ const AboutPage = () => {
               <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-3 flex items-center justify-center">
                 <span className="text-gray-500 text-xl font-bold">JD</span>
               </div>
-              <h3 className="font-medium">John Davis</h3>
+              <h3 className="font-medium">Johann's Cat</h3>
               <p className="text-gray-600 text-sm">Founder & CEO</p>
             </div>
             <div className="text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-3 flex items-center justify-center">
                 <span className="text-gray-500 text-xl font-bold">MP</span>
               </div>
-              <h3 className="font-medium">Maria Patel</h3>
+              <h3 className="font-medium">Sanish Pagui</h3>
               <p className="text-gray-600 text-sm">Lead Developer</p>
+            </div>
+            <div className="text-center">
+              <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-3 flex items-center justify-center">
+                <span className="text-gray-500 text-xl font-bold">MP</span>
+              </div>
+              <h3 className="font-medium">Audumber Shirodhar</h3>
+              <p className="text-gray-600 text-sm">Idle Developer</p>
             </div>
           </div>
         </div>
