@@ -22,21 +22,20 @@ const ContactPage = () => {
     };
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        const handleSubmit = (e) => {
-            if (e && typeof e.preventDefault === 'function') {
-                e.preventDefault();
-            }
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
 
-            setIsSubmitting(true);
+        setIsSubmitting(true);
 
-            // Simulate form submission
-            setTimeout(() => {
-                setIsSubmitting(false);
-                setSubmitMessage('Thank you for your message. We will get back to you soon!');
-                setFormData({ name: '', email: '', subject: '', message: '' });
-            }, 1000);
-        };
+        // Simulate form submission
+        setTimeout(() => {
+            setIsSubmitting(false);
+            setSubmitMessage('Thank you for your message. We will get back to you soon!');
+            setFormData({ name: '', email: '', subject: '', message: '' });
+        }, 1000);
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50">
