@@ -40,13 +40,13 @@ const Navbar = () => {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center space-x-6">
-                        {['Home', 'About', 'Contact'].map((item) => (
+                        {navItems.map((item) => (
                             <Link 
-                                key={item} 
-                                href={`/${item.toLowerCase()}`} 
+                                key={item.label} 
+                                href={item.href} 
                                 className="text-gray-700 hover:text-indigo-600 text-[16px] lg:text-xl font-medium"
                             >
-                                {item}
+                                {item.label}
                             </Link>
                         ))}
                     </div>
