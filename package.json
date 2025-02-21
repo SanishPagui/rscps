@@ -2,6 +2,10 @@
   "name": "rscps",
   "version": "0.1.0",
   "private": true,
+  "type": "commonjs",
+  "prisma": {
+    "seed": "ts-node ./prisma/seed.mjs"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -39,12 +43,13 @@
     "@shadcn/ui": "^0.0.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.8",
-    "@types/node": "^20",
+    "@types/node": "^20.17.19",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8",
     "prisma": "^6.4.0",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
   }
 }
