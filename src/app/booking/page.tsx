@@ -55,7 +55,7 @@ const SearchBookingsPage = () => {
         ...(searchParams.date && { date: searchParams.date })
       }).toString();
   
-      const res = await fetch(`/api/rides?${queryParams}`, {
+      const res = await fetch(`/api/rides`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

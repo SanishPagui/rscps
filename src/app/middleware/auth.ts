@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
 interface AuthenticatedUser {
@@ -13,7 +14,7 @@ export async function authenticateToken(req: NextRequest): Promise<Authenticated
     const token = authHeader?.split(" ")[1];
 
     if (!token) {
-      return null; // No token provided
+      return null;
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthenticatedUser;
@@ -23,16 +24,17 @@ export async function authenticateToken(req: NextRequest): Promise<Authenticated
       select: { id: true, email: true }
     });
 
-    return user || null; // Return user if found, otherwise null
+    return user;
   } catch (error) {
     console.error("Auth error:", error);
-    return null; // Invalid token
+    return null;
   }
 }
 
 interface AuthState {
   error?: string;
   success?: boolean;
+  token?: string;
 }
 
 export async function signUp(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
@@ -49,14 +51,35 @@ export async function signUp(prevState: AuthState | null, formData: FormData): P
       return { error: "Password must be at least 6 characters" };
     }
 
-    // Hash the password (implement hashing before storing in DB)
-    // Check if user exists
-    // Create user in database
-    // Generate JWT token if needed
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    console.log("Signing up:", { name, email, password });
+    if (existingUser) {
+      return { error: "Email already registered" };
+    }
 
-    return { success: true };
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword
+      }
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
+
+    return { success: true, token };
   } catch (error) {
     console.error("Sign up error:", error);
     return { error: "Failed to create account" };
@@ -72,12 +95,29 @@ export async function logIn(prevState: AuthState | null, formData: FormData): Pr
       return { error: "Email and password are required" };
     }
 
-    // Verify user credentials
-    // Generate JWT token and return it
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
 
-    console.log("Logging in:", { email, password });
+    if (!user) {
+      return { error: "Invalid credentials" };
+    }
 
-    return { success: true };
+    // Verify password
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return { error: "Invalid credentials" };
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
+
+    return { success: true, token };
   } catch (error) {
     console.error("Login error:", error);
     return { error: "Invalid credentials" };

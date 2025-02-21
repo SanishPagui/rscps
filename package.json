@@ -2,7 +2,7 @@
   "name": "rscps",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "prisma": {
     "seed": "ts-node ./prisma/seed.mjs"
   },
