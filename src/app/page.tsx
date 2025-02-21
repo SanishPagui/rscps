@@ -34,6 +34,7 @@ const page = () => {
       }}>Log Out</button>
       <Home/>
     </div>
+    //<Home/>
   )
 }
 

@@ -7,6 +7,7 @@ import { Menu, X, Search } from 'lucide-react';
 const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navItems = [
+        { label: 'chat', href: '/chat' },
         { label: 'Details', href: '/details' },
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'About', href: '/about' },
