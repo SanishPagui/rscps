@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { signUp, logIn } from "@/middleware/auth"
+import { signUp, logIn } from "@/app/middleware/auth"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
