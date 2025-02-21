@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import AuthForm from "./auth-form"
-import Image from "next/image"
 
 export default function AuthPage() {
   return (
