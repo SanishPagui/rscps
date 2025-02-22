@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MapPin, Clock, Users, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import Navbar from '../components/navbar';
+import { useAuthToken } from '../../lib/firebase';
 
 interface RideDetails {
   from: string;
@@ -15,6 +16,8 @@ interface RideDetails {
 }
 
 const CreateRidePage = () => {
+  const { token, loading: authLoading } = useAuthToken();
+  
   const [rideDetails, setRideDetails] = useState<RideDetails>({
     from: '',
     to: '',
@@ -32,13 +35,17 @@ const CreateRidePage = () => {
     setLoading(true);
     setError(null);
     setSuccess(false);
-
+    if (!token) {
+      setError('Please sign in to create a ride');
+      return;
+    }
+    
     try {
       const response = await fetch('/api/rides', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(rideDetails)
       });

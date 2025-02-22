@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import Navbar from "../components/navbar";
+import { useAuthToken } from '../../lib/firebase';
 
 const SearchBookingsPage = () => {
   type Ride = {
@@ -32,6 +33,7 @@ const SearchBookingsPage = () => {
     to: "",
     date: "",
   });
+  const { token, loading: authLoading } = useAuthToken();
 
   const [rides, setRides] = useState<Ride[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -77,10 +79,15 @@ const SearchBookingsPage = () => {
   
   const fetchRides = async () => {
     setLoading(true);
+    if (!token) {
+      setError('Please sign in to view rides');
+      return;
+    }
+    
     try {
       const res = await fetch('/api/rides', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       if (!res.ok) {
@@ -97,10 +104,15 @@ const SearchBookingsPage = () => {
   
   const fetchBookings = async () => {
     setLoading(true);
+    if (!token) {
+      setError('Please sign in to view bookings');
+      return;
+    }
+    
     try {
       const res = await fetch('/api/bookings', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       if (!res.ok) {

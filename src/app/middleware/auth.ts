@@ -1,49 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import { auth } from "../firebase/config";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth } from "firebase-admin/auth";
 import { prisma } from "@/lib/prisma";
+import admin from "../firebase/admin"; // Ensure Firebase Admin is initialized
 
-interface AuthenticatedUser {
-  id: string;
-  email: string;
-}
-
-export async function authenticateToken(req: NextRequest): Promise<AuthenticatedUser | null> {
+export async function authenticateToken(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
-    const token = authHeader?.split(" ")[1];
+    if (!authHeader) return null;
 
-    if (!token) {
-      return null;
-    }
+    const token = authHeader.split(" ")[1];
+    if (!token) return null;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthenticatedUser;
+    // Verify Firebase token
+    const decodedToken = await getAuth().verifyIdToken(token);
+    if (!decodedToken) return null;
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+    // Find user in Prisma database using Firebase UID
+    let user = await prisma.user.findUnique({
+      where: { id: decodedToken.uid }, // Use id instead of firebaseUid
       select: { id: true, email: true }
     });
+    
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: decodedToken.uid,  // Store Firebase UID as the primary ID
+          email: decodedToken.email!,
+          password: "", // Add a placeholder password
+        },
+        select: { id: true, email: true }
+      });
+    }
+    
+    
 
     return user;
   } catch (error) {
-    console.error("Auth error:", error);
+    console.error("Authentication error:", error);
     return null;
   }
 }
 
-interface AuthState {
-  error?: string;
-  success?: boolean;
-  token?: string;
-}
 
-export async function signUp(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
+
+export async function signUp(formData: FormData) {
   try {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    if (!email || !password || !name) {
+    if (!name || !email || !password) {
       return { error: "All fields are required" };
     }
 
@@ -51,42 +59,18 @@ export async function signUp(prevState: AuthState | null, formData: FormData): P
       return { error: "Password must be at least 6 characters" };
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    });
+    // Sign up with Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(auth , email, password);
+    const user = userCredential.user;
 
-    if (existingUser) {
-      return { error: "Email already registered" };
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword
-      }
-    });
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
-    );
-
-    return { success: true, token };
-  } catch (error) {
-    console.error("Sign up error:", error);
-    return { error: "Failed to create account" };
+    return { success: true, uid: user.uid, email: user.email };
+  } catch (error: any) {
+    console.error("Sign-up error:", error);
+    return { error: error.message };
   }
 }
 
-export async function logIn(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
+export async function logIn(formData: FormData) {
   try {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -95,31 +79,13 @@ export async function logIn(prevState: AuthState | null, formData: FormData): Pr
       return { error: "Email and password are required" };
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email }
-    });
+    // Log in with Firebase Authentication
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-    if (!user) {
-      return { error: "Invalid credentials" };
-    }
-
-    // Verify password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return { error: "Invalid credentials" };
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
-    );
-
-    return { success: true, token };
-  } catch (error) {
+    return { success: true, uid: user.uid, email: user.email };
+  } catch (error: any) {
     console.error("Login error:", error);
-    return { error: "Invalid credentials" };
+    return { error: error.message };
   }
 }
