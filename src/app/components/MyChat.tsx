@@ -1,22 +1,24 @@
+'use client';
+
 import { useClient } from '../discord/hooks/useClient';
 import { User } from 'stream-chat';
 import {
   Chat,
   Channel,
-  ChannelList,
   MessageList,
   MessageInput,
-  Thread,
   Window,
 } from 'stream-chat-react';
 
-import CustomChannelList from '@/components/ChannelList/CustomChannelList';
-import ServerList from '@/components/ServerList/ServerList';
-import MessageComposer from '@/components/MessageList/MessageComposer/MessageComposer';
-import CustomDateSeparator from '@/components/MessageList/CustomDateSeparator/CustomDateSeparator';
-import CustomMessage from '@/components/MessageList/CustomMessage/CustomMessage';
-import { customReactionOptions } from '@/components/MessageList/CustomReactions/CustomReactionsSelector';
+import ServerList from '../components/ServerList/ServerList';
+import MessageComposer from './MessageList/MessageComposer/MessageComposer';
+import CustomDateSeparator from './MessageList/CustomDateSeparator/CustomDareSeparator';
+import CustomMessage from './MessageList/CustomMessage/CustomMessage';
+import { customReactionOptions } from './MessageList/CustomReactions/CustomReactionsSelector';
 import CustomChannelHeader from './MessageList/CustomChannelHeader/CustomChannelHeader';
+import { useDiscordContext } from '../discord/contexts/DiscordContext';
+import { useEffect, useState } from 'react';
+import { Channel as ChannelType } from 'stream-chat';
 
 export default function MyChat({
   apiKey,
@@ -33,16 +35,48 @@ export default function MyChat({
     tokenOrProvider: token,
   });
 
+  const { server } = useDiscordContext();
+  const [currentChannel, setCurrentChannel] = useState<ChannelType | null>(null);
+
+  useEffect(() => {
+    const initializeChannel = async () => {
+      if (!chatClient || !server) return;
+
+      // Get or create a single channel for the server
+      const channel = chatClient.channel('messaging', server.name, {
+        name: server.name,
+        members: [user.id],
+        data: {
+          server: server.name,
+          image: server.image
+        },
+      });
+
+      try {
+        await channel.watch();
+        setCurrentChannel(channel);
+      } catch (error) {
+        console.error('Error initializing channel:', error);
+      }
+    };
+
+    initializeChannel();
+  }, [chatClient, server, user.id]);
+
   if (!chatClient) {
     return <div>Error, please try again later.</div>;
+  }
+
+  if (!currentChannel) {
+    return <div>Loading channel...</div>;
   }
 
   return (
     <Chat client={chatClient} theme='str-chat__theme-light'>
       <section className='flex h-screen w-screen layout'>
         <ServerList />
-        <ChannelList List={CustomChannelList} sendChannelsToList={true} />
         <Channel
+          channel={currentChannel}
           Message={CustomMessage}
           Input={MessageComposer}
           DateSeparator={CustomDateSeparator}
@@ -53,7 +87,6 @@ export default function MyChat({
             <MessageList />
             <MessageInput />
           </Window>
-          <Thread />
         </Channel>
       </section>
     </Chat>

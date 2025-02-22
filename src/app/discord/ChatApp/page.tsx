@@ -10,7 +10,12 @@ import { useCallback, useEffect, useState } from 'react';
 import MyChat from '../../components/MyChat';
 import LocomotiveScroll from 'locomotive-scroll';
 
-const STREAM_API_KEY = '7cu55d72xtjs';
+const STREAM_API_KEY = 'ctpgdqf3h24c';
+
+export type DiscordServer = {
+    name: string;
+    image: string | undefined;
+  };
 
 interface HomeState {
   apiKey: string;
