@@ -27,7 +27,8 @@ export default function AuthForm() {
     try {
       setError(null);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("User signed up:", userCredential.user);
+      const token = await userCredential.user.getIdToken();
+      localStorage.setItem('token', token); // Store the actual token
       sessionStorage.setItem('user', 'true');
       router.push('/');
     } catch (error: any) {
@@ -46,7 +47,8 @@ export default function AuthForm() {
     try {
       setError(null);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("User logged in:", userCredential.user);
+      const token = await userCredential.user.getIdToken();
+      localStorage.setItem('token', token); // Store the actual token
       sessionStorage.setItem('user', 'true');
       router.push('/');
     } catch (error: any) {
@@ -67,7 +69,8 @@ export default function AuthForm() {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      console.log("Google sign-in successful:", result.user);
+      const token = await result.user.getIdToken();
+      localStorage.setItem('token', token); // Store the actual token
       sessionStorage.setItem('user', 'true');
       router.push('/');
     } catch (error: any) {

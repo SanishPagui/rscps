@@ -5,6 +5,7 @@ import { MapPin, Clock, Users, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import Navbar from '../components/navbar';
 import { useAuthToken } from '../../lib/firebase';
+import { useRouter } from 'next/navigation';
 
 interface RideDetails {
   from: string;
@@ -16,6 +17,7 @@ interface RideDetails {
 }
 
 const CreateRidePage = () => {
+  const router = useRouter()
   const { token, loading: authLoading } = useAuthToken();
   
   const [rideDetails, setRideDetails] = useState<RideDetails>({
@@ -32,14 +34,15 @@ const CreateRidePage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+    const token = localStorage.getItem('token');
+    
     if (!token) {
-      setError('Please sign in to create a ride');
+      setError('Please sign in to continue');
+      router.push('/auth'); // Redirect to auth page
       return;
     }
     
+  
     try {
       const response = await fetch('/api/rides', {
         method: 'POST',
@@ -48,21 +51,6 @@ const CreateRidePage = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(rideDetails)
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create ride');
-      }
-
-      setSuccess(true);
-      setRideDetails({
-        from: '',
-        to: '',
-        date: '',
-        time: '',
-        seats: '',
-        price: ''
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

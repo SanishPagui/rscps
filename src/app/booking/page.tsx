@@ -4,8 +4,12 @@ import React, { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import Navbar from "../components/navbar";
 import { useAuthToken } from '../../lib/firebase';
+import { useRouter } from 'next/navigation';
+
 
 const SearchBookingsPage = () => {
+  const router = useRouter();
+
   type Ride = {
     id: string;
     from: string;
@@ -50,25 +54,33 @@ const SearchBookingsPage = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const queryParams = new URLSearchParams({
-        ...(searchParams.from && { from: searchParams.from }),
-        ...(searchParams.to && { to: searchParams.to }),
-        ...(searchParams.date && { date: searchParams.date })
-      }).toString();
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      setError('Please sign in to continue');
+      router.push('/auth'); // Redirect to auth page
+      return;
+    }
   
-      const res = await fetch(`/api/rides${queryParams ? `?${queryParams}` : ''}`, {
+    const rideDetails = {
+      from: searchParams.from,  // Origin location (string)
+      to: searchParams.to,      // Destination location (string)
+      date: searchParams.date,  // Date of the ride (YYYY-MM-DD format)
+      time: "HH:MM",            // Time of the ride (24-hour format)
+      seats: 4,                 // Total seats available (number)
+      price: 500                // Price per seat (number)
+    };
+    
+  
+    try {
+      const response = await fetch('/api/rides', {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(rideDetails)
       });
-      
-      if (!res.ok) throw new Error('Failed to search rides');
-      const data = await res.json();
-      setRides(data);
-      setSuccess('Search completed successfully');
     } catch (error) {
       setError('Failed to search rides');
       console.error('Error searching rides:', error);

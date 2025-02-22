@@ -54,6 +54,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await authenticateToken(req);
+    console.log("Request Headers:", user);
+
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { from, to, date, time, seats, price } = await req.json();

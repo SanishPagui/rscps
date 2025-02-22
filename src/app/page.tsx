@@ -15,6 +15,16 @@ const Page = () => {
   useEffect(() => {
     if (!loading && !user) {
       router.push('/Login');
+      return;
+    }
+
+    // If user exists, get and store their token
+    if (user) {
+      const setToken = async () => {
+        const token = await user.getIdToken();
+        localStorage.setItem('token', token);
+      };
+      setToken();
     }
     
     // Initialize LocomotiveScroll
@@ -27,7 +37,9 @@ const Page = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      // Clear both session storage and token
       sessionStorage.removeItem('user');
+      localStorage.removeItem('token');
       router.push('/Login');
     } catch (error) {
       console.error("Logout error:", error);
