@@ -1,5 +1,5 @@
-import { useDiscordContext } from '@/contexts/DiscordContext';
-import { UserObject } from '@/model/UserObject';
+import { useDiscordContext } from '../../discord/contexts/DiscordContext';
+import { UserObject } from '../../discord/model/UserObject';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
