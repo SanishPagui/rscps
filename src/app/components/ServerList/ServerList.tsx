@@ -1,7 +1,7 @@
 import { useChatContext } from 'stream-chat-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
-import { DiscordServer } from '../../discord/app/page';
+import { DiscordServer } from '../../discord/page';
 import { useDiscordContext } from '../../discord/contexts/DiscordContext';
 import CreateServerForm from './CreateServerForm';
 import Link from 'next/link';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useClient } from '../discord/hooks/useClient';
+import { useClient } from '../../discord/hooks/useClient';
 import { User } from 'stream-chat';
 import {
   Chat,
@@ -10,13 +10,13 @@ import {
   Window,
 } from 'stream-chat-react';
 
-import ServerList from '../components/ServerList/ServerList';
-import MessageComposer from './MessageList/MessageComposer/MessageComposer';
-import CustomDateSeparator from './MessageList/CustomDateSeparator/CustomDareSeparator';
-import CustomMessage from './MessageList/CustomMessage/CustomMessage';
-import { customReactionOptions } from './MessageList/CustomReactions/CustomReactionsSelector';
-import CustomChannelHeader from './MessageList/CustomChannelHeader/CustomChannelHeader';
-import { useDiscordContext } from '../discord/contexts/DiscordContext';
+import ServerList from '../../components/ServerList/ServerList';
+import MessageComposer from '../MessageList/MessageComposer/MessageComposer';
+import CustomDateSeparator from '../MessageList/CustomDateSeparator/CustomDareSeparator';
+import CustomMessage from '../MessageList/CustomMessage/CustomMessage';
+import { customReactionOptions } from '../MessageList/CustomReactions/CustomReactionsSelector';
+import CustomChannelHeader from '../MessageList/CustomChannelHeader/CustomChannelHeader';
+import { useDiscordContext } from '../../discord/contexts/DiscordContext';
 import { useEffect, useState } from 'react';
 import { Channel as ChannelType } from 'stream-chat';
 

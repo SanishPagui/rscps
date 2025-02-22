@@ -7,7 +7,7 @@ import {
   import { useState } from 'react';
   import { SendButton, useChatContext } from 'stream-chat-react';
   import { plusItems } from '../MessageComposer/plusItems';
-  import ChannelListMenuRow from '@/components/ChannelList/TopBar/ChannelListMenuRow';
+  import ChannelListMenuRow from '../../ChannelList/TopBar/ChannelListMenuRow';
   import { JSX } from 'react';
   
   export default function MessageComposer(): JSX.Element {

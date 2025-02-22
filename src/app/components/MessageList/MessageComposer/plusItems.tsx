@@ -1,5 +1,5 @@
 import { Apps, FolderPlus, Thread } from '../../ChannelList/Icons';
-import { ListRowElement } from '@/components/ChannelList/TopBar/menuItems';
+import { ListRowElement } from '../../ChannelList/TopBar/MenuItems';
 
 export const plusItems: ListRowElement[] = [
   {
