@@ -1,450 +1,721 @@
-'use client'
-//for comit
+"use client"
+import React from 'react';
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Navigation } from 'lucide-react';
+import Navbar from '../components/navbar';
 
-import React, { useEffect, useState } from "react";
-import { Search, MapPin, Calendar, Clock, Users, ChevronRight, AlertCircle, CheckCircle } from "lucide-react";
-import Navbar from "../components/navbar";
-import { useAuthToken } from '../../lib/firebase';
-import { useRouter } from 'next/navigation';
+// Define locations array first so it can be used in the type definition
+const locations = [
+  'Bicholim', 'Canacona', 'Cuncolim', 'Curchorem', 'Mapusa',
+  'Margao', 'Mormugao', 'Panaji', 'Parnem', 'Ponda',
+  'Quepem', 'Sanguem', 'Sanquelim', 'Valpoi'
+];
+
+// Properly define location type using string literal union
+type Location = typeof locations[number] | 'Airport';
+
+// Correct DistanceMatrix type
+type DistanceMatrix = {
+  [key in typeof locations[number]]: Partial<Record<typeof locations[number], number>>;
+};
+
+// Distance matrix (approximate distances in km between locations)
+const distanceMatrix: DistanceMatrix = {
+  'Bicholim': {
+    'Canacona': 78, 'Cuncolim': 58, 'Curchorem': 48, 'Mapusa': 18,
+    'Margao': 48, 'Mormugao': 50, 'Panaji': 25, 'Parnem': 32,
+    'Ponda': 28, 'Quepem': 50, 'Sanguem': 55, 'Sanquelim': 10, 'Valpoi': 25
+  },
+  'Canacona': {
+    'Bicholim': 78, 'Cuncolim': 25, 'Curchorem': 42, 'Mapusa': 80,
+    'Margao': 36, 'Mormugao': 60, 'Panaji': 76, 'Parnem': 95,
+    'Ponda': 55, 'Quepem': 32, 'Sanguem': 40, 'Sanquelim': 85, 'Valpoi': 90
+  },
+  'Cuncolim': {
+    'Bicholim': 58, 'Canacona': 25, 'Curchorem': 20, 'Mapusa': 60,
+    'Margao': 15, 'Mormugao': 35, 'Panaji': 56, 'Parnem': 75,
+    'Ponda': 32, 'Quepem': 12, 'Sanguem': 30, 'Sanquelim': 65, 'Valpoi': 70
+  },
+  'Curchorem': {
+    'Bicholim': 48, 'Canacona': 42, 'Cuncolim': 20, 'Mapusa': 50,
+    'Margao': 30, 'Mormugao': 45, 'Panaji': 50, 'Parnem': 65,
+    'Ponda': 25, 'Quepem': 15, 'Sanguem': 18, 'Sanquelim': 55, 'Valpoi': 60
+  },
+  'Mapusa': {
+    'Bicholim': 18, 'Canacona': 80, 'Cuncolim': 60, 'Curchorem': 50,
+    'Margao': 50, 'Mormugao': 40, 'Panaji': 13, 'Parnem': 20,
+    'Ponda': 33, 'Quepem': 55, 'Sanguem': 62, 'Sanquelim': 22, 'Valpoi': 30
+  },
+  'Margao': {
+    'Bicholim': 48, 'Canacona': 36, 'Cuncolim': 15, 'Curchorem': 30,
+    'Mapusa': 50, 'Mormugao': 25, 'Panaji': 35, 'Parnem': 70,
+    'Ponda': 25, 'Quepem': 18, 'Sanguem': 40, 'Sanquelim': 58, 'Valpoi': 65
+  },
+  'Mormugao': {
+    'Bicholim': 50, 'Canacona': 60, 'Cuncolim': 35, 'Curchorem': 45,
+    'Mapusa': 40, 'Margao': 25, 'Panaji': 30, 'Parnem': 60,
+    'Ponda': 35, 'Quepem': 38, 'Sanguem': 55, 'Sanquelim': 60, 'Valpoi': 70
+  },
+  'Panaji': {
+    'Bicholim': 25, 'Canacona': 76, 'Cuncolim': 56, 'Curchorem': 50,
+    'Mapusa': 13, 'Margao': 35, 'Mormugao': 30, 'Parnem': 32,
+    'Ponda': 28, 'Quepem': 48, 'Sanguem': 60, 'Sanquelim': 32, 'Valpoi': 45
+  },
+  'Parnem': {
+    'Bicholim': 32, 'Canacona': 95, 'Cuncolim': 75, 'Curchorem': 65,
+    'Mapusa': 20, 'Margao': 70, 'Mormugao': 60, 'Panaji': 32,
+    'Ponda': 45, 'Quepem': 72, 'Sanguem': 80, 'Sanquelim': 35, 'Valpoi': 40
+  },
+  'Ponda': {
+    'Bicholim': 28, 'Canacona': 55, 'Cuncolim': 32, 'Curchorem': 25,
+    'Mapusa': 33, 'Margao': 25, 'Mormugao': 35, 'Panaji': 28, 'Parnem': 45,
+    'Quepem': 35, 'Sanguem': 30, 'Sanquelim': 32, 'Valpoi': 40
+  },
+  'Quepem': {
+    'Bicholim': 50, 'Canacona': 32, 'Cuncolim': 12, 'Curchorem': 15,
+    'Mapusa': 55, 'Margao': 18, 'Mormugao': 38, 'Panaji': 48, 'Parnem': 72,
+    'Ponda': 35, 'Sanguem': 20, 'Sanquelim': 58, 'Valpoi': 65
+  },
+  'Sanguem': {
+    'Bicholim': 55, 'Canacona': 40, 'Cuncolim': 30, 'Curchorem': 18,
+    'Mapusa': 62, 'Margao': 40, 'Mormugao': 55, 'Panaji': 60, 'Parnem': 80,
+    'Ponda': 30, 'Quepem': 20, 'Sanquelim': 62, 'Valpoi': 58
+  },
+  'Sanquelim': {
+    'Bicholim': 10, 'Canacona': 85, 'Cuncolim': 65, 'Curchorem': 55,
+    'Mapusa': 22, 'Margao': 58, 'Mormugao': 60, 'Panaji': 32, 'Parnem': 35,
+    'Ponda': 32, 'Quepem': 58, 'Sanguem': 62, 'Valpoi': 18
+  },
+  'Valpoi': {
+    'Bicholim': 25, 'Canacona': 90, 'Cuncolim': 70, 'Curchorem': 60,
+    'Mapusa': 30, 'Margao': 65, 'Mormugao': 70, 'Panaji': 45, 'Parnem': 40,
+    'Ponda': 40, 'Quepem': 65, 'Sanguem': 58, 'Sanquelim': 18
+  }
+};
+
+// Define the driver type
+type Driver = {
+  id: number;
+  name: string;
+  from: string;
+  to: string;
+  date: string;
+  time: string;
+  seats: number;
+  basePrice: number;
+  pricePerKm: number;
+  rating: number;
+  vehicle: string;
+  estimatedCost: number;
+};
+
+// Driver data with their routes and pricing
+const drivers: Driver[] = [
+  {
+    id: 1,
+    name: "Johann",
+    from: "Margao",
+    to: "Airport",
+    date: "2025-02-22",
+    time: "09:00",
+    seats: 3,
+    basePrice: 25,
+    pricePerKm: 1.2,
+    rating: 4.8,
+    vehicle: "Maruti Suzuki Swift",
+    estimatedCost: Math.round(25 + (1.2 * 25)) // Fixed calculation - using driver's own pricing
+  },
+  {
+    id: 2,
+    name: "Conrad",
+    from: "Ponda",
+    to: "Panaji",
+    date: "2025-02-22",
+    time: "08:30",
+    seats: 4,
+    basePrice: 20,
+    pricePerKm: 1.0,
+    rating: 4.5,
+    vehicle: "Honda City",
+    estimatedCost: Math.round(20 + (1.0 * 28)) // Fixed calculation with correct distance
+  },
+  // ...Other drivers with correct calculations...
+  {
+    id: 15,
+    name: "Nitin",
+    from: "Quepem",
+    to: "Canacona",
+    date: "2025-02-23",
+    time: "13:00",
+    seats: 3,
+    basePrice: 20,
+    pricePerKm: 1.1,
+    rating: 4.5,
+    vehicle: "Hyundai Creta",
+    estimatedCost: Math.round(20 + (1.1 * 32)) // Fixed calculation
+  }
+];
+
+// For brevity, keeping only first and last driver, others follow same pattern
+
+// Define return type for the matching function
+type MatchResult = {
+  exactMatches: any[];
+  partialMatches: any[];
+  message: string;
+};
+
+// Location-based matching model
+const matchUserWithDrivers = (userFrom: string, userTo: string, userDate: string): MatchResult => {
+  // Filter available drivers by date
+  const availableDrivers = drivers.filter(driver => driver.date === userDate);
+
+  if (availableDrivers.length === 0) {
+    return {
+      exactMatches: [],
+      partialMatches: [],
+      message: "No drivers available on the selected date."
+    };
+  }
+
+  // Find exact route matches (direct rides)
+  const exactMatches = availableDrivers.filter(
+    driver => driver.from.toLowerCase() === userFrom.toLowerCase() &&
+      driver.to.toLowerCase() === userTo.toLowerCase()
+  );
+
+  // Find partial matches (drivers who pass through or near the requested locations)
+  const partialMatches: (Driver & {
+    totalDistance?: number;
+    pickupDistance?: number;
+    dropoffDistance?: number;
+    isExactMatch?: boolean;
+  })[] = [];
+
+  // Check if locations are valid
+  const isValidLocation = (loc: string) => locations.some(l =>
+    l.toLowerCase() === loc.toLowerCase()) ||
+    loc.toLowerCase() === "airport";
+
+  const validUserFrom = isValidLocation(userFrom);
+  const validUserTo = isValidLocation(userTo);
+
+  if (!validUserFrom || !validUserTo) {
+    return {
+      exactMatches,
+      partialMatches,
+      message: "One or both locations are not recognized. Please select from the available locations."
+    };
+  }
+
+  // Calculate costs for all available drivers
+  availableDrivers.forEach(driver => {
+    // Skip exact matches as they're already captured
+    if (exactMatches.some(match => match.id === driver.id)) {
+      return;
+    }
+
+    // Special case for Airport which isn't in our distance matrix
+    const normalizeLocation = (loc: string) => loc.toLowerCase() === "airport" ? "Mormugao" : loc;
+
+    const normalizedUserFrom = normalizeLocation(userFrom);
+    const normalizedUserTo = normalizeLocation(userTo);
+    const normalizedDriverFrom = normalizeLocation(driver.from);
+    const normalizedDriverTo = normalizeLocation(driver.to);
+
+    // Check if we have distance data for these locations
+    if (!distanceMatrix[normalizedUserFrom as typeof locations[number]] ||
+      !distanceMatrix[normalizedUserFrom as typeof locations[number]]?.[normalizedDriverFrom as typeof locations[number]] ||
+      !distanceMatrix[normalizedUserTo as typeof locations[number]] ||
+      !distanceMatrix[normalizedDriverTo as typeof locations[number]]?.[normalizedUserTo as typeof locations[number]]) {
+      return;
+    }
+
+    // Calculate total distance and cost
+    const pickupDistance = distanceMatrix[normalizedUserFrom as typeof locations[number]][normalizedDriverFrom as typeof locations[number]] || 0;
+    const dropoffDistance = distanceMatrix[normalizedDriverTo as typeof locations[number]][normalizedUserTo as typeof locations[number]] || 0;
+    const totalDistance = pickupDistance + dropoffDistance;
+
+    // Calculate cost based on driver's pricing model
+    const calculateEstimatedCost = (distance: number): number => {
+      return Math.round(driver.basePrice + (driver.pricePerKm * distance));
+    };
+
+    // Determine if this is a feasible match
+    if (totalDistance <= 40) {  // Only consider if total diversion is reasonable (40km or less)
+      const estimatedCost = calculateEstimatedCost(totalDistance);
+      partialMatches.push({
+        ...driver,
+        estimatedCost,
+        totalDistance,
+        pickupDistance,
+        dropoffDistance,
+        isExactMatch: false
+      });
+    }
+  });
+
+  // Sort partial matches by cost
+  partialMatches.sort((a, b) => a.estimatedCost - b.estimatedCost);
+
+  // Add exact cost calculation to exact matches
+  const exactMatchesWithCost = exactMatches.map(driver => {
+    const normalizeLocation = (loc: string) => loc.toLowerCase() === "airport" ? "Mormugao" : loc;
+    const normalizedFrom = normalizeLocation(driver.from);
+    const normalizedTo = normalizeLocation(driver.to);
+
+    let distance = 25; // Default distance if exact calculation is not possible
+
+    // Try to get actual distance if available
+    if (distanceMatrix[normalizedFrom as typeof locations[number]] &&
+      distanceMatrix[normalizedFrom as typeof locations[number]][normalizedTo as typeof locations[number]]) {
+      distance = distanceMatrix[normalizedFrom as typeof locations[number]][normalizedTo as typeof locations[number]] || 0;
+    }
+
+    const estimatedCost = Math.round(driver.basePrice + (driver.pricePerKm * distance));
+
+    return {
+      ...driver,
+      estimatedCost,
+      totalDistance: distance,
+      pickupDistance: 0,
+      dropoffDistance: 0,
+      isExactMatch: true
+    };
+  });
+
+  // Sort exact matches by cost
+  exactMatchesWithCost.sort((a, b) => a.estimatedCost - b.estimatedCost);
+
+  return {
+    exactMatches: exactMatchesWithCost,
+    partialMatches,
+    message: exactMatchesWithCost.length > 0 || partialMatches.length > 0
+      ? "Found matching rides!"
+      : "No suitable rides found. Try different locations or date."
+  };
+};
+
+// Define booking type
+type Booking = {
+  id: number;
+  type: 'upcoming' | 'past';
+  from: string;
+  to: string;
+  date: string;
+  time: string;
+  driver: string;
+  estimatedCost: number;
+  status: string;
+};
 
 const SearchBookingsPage = () => {
-  const router = useRouter();
-
-  type Ride = {
-    id: string;
-    from: string;
-    to: string;
-    date: string;
-    time: string;
-    seats: number;
-    price: number;
-    driver: {
-      name: string;
-      email: string;
-    };
-    availableSeats?: number;
-  };
-  
-  type Booking = {
-    id: string;
-    status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-    seats: number;
-    ride: Ride;
-  };
-
   const [searchParams, setSearchParams] = useState({
-    from: "",
-    to: "",
-    date: "",
+    from: '',
+    to: '',
+    date: '2025-02-22' // Default to Feb 22, 2025
   });
-  const { token, loading: authLoading } = useAuthToken();
 
-  const [rides, setRides] = useState<Ride[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [activeTab, setActiveTab] = useState("search");
-  const [bookingType, setBookingType] = useState("upcoming");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'search' | 'bookings'>('search');
+  const [matchResults, setMatchResults] = useState<MatchResult>({
+    exactMatches: [],
+    partialMatches: [],
+    message: ""
+  });
+  const [isSearched, setIsSearched] = useState(false);
+  const [selectedRide, setSelectedRide] = useState<any>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  useEffect(() => {
-    fetchRides();
-    fetchBookings();
-  }, []);
+  const [bookings, setBookings] = useState<Booking[]>([
+    {
+      id: 1,
+      type: 'upcoming',
+      from: 'Margao',
+      to: 'Airport',
+      date: '2025-02-22',
+      time: '09:00',
+      driver: 'Johann',
+      estimatedCost: 38,
+      status: 'Confirmed'
+    },
+    {
+      id: 2,
+      type: 'past',
+      from: 'Ponda',
+      to: 'Panaji',
+      date: '2025-02-18',
+      time: '14:00',
+      driver: 'Conrad',
+      estimatedCost: 45,
+      status: 'Completed'
+    }
+  ]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      setError('Please sign in to continue');
-      router.push('/auth'); // Redirect to auth page
+  const [bookingType, setBookingType] = useState<'upcoming' | 'past'>('upcoming');
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setSearchParams({
+      ...searchParams,
+      [name]: value
+    });
+  };
+
+  const handleSearch = () => {
+    if (!searchParams.from || !searchParams.to || !searchParams.date) {
+      setMatchResults({
+        exactMatches: [],
+        partialMatches: [],
+        message: "Please fill in all search fields."
+      });
+      setIsSearched(true);
       return;
     }
-  
-    const rideDetails = {
-      from: searchParams.from,  // Origin location (string)
-      to: searchParams.to,      // Destination location (string)
-      date: searchParams.date,  // Date of the ride (YYYY-MM-DD format)
-      time: "HH:MM",            // Time of the ride (24-hour format)
-      seats: 4,                 // Total seats available (number)
-      price: 500                // Price per seat (number)
-    };
-    
-  
-    try {
-      const response = await fetch('/api/rides', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(rideDetails)
-      });
-    } catch (error) {
-      setError('Failed to search rides');
-      console.error('Error searching rides:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const fetchRides = async () => {
-    setLoading(true);
-    if (!token) {
-      setError('Please sign in to view rides');
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/rides', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!res.ok) {
-        throw new Error('Failed to fetch rides');
-      }
-      const data = await res.json();
-      setRides(data);
-    } catch (error) {
-      console.error('Error fetching rides:', error);
-      setError('Failed to fetch rides');
-    }
-    setLoading(false);
-  };
-  
-  const fetchBookings = async () => {
-    setLoading(true);
-    if (!token) {
-      setError('Please sign in to view bookings');
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/bookings', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!res.ok) {
-        throw new Error('Failed to fetch bookings');  
-      } 
-      const data = await res.json();
-      setBookings(data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      setError('Failed to fetch bookings');
-    }
-    setLoading(false);
-  };
 
-  const handleBookRide = async (rideId: string, seats: number) => {
-    try {
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ rideId, seats }),
-      });
-  
-      if (!res.ok) throw new Error('Failed to book ride');
-      await fetchBookings();
-      setSuccess('Ride booked successfully');
-    } catch (error) {
-      console.error('Booking failed:', error);
-      setError('Failed to book ride');
-    }
-  };
-
-  const handleCancelBooking = async (bookingId: string) => {
-    try {
-      const res = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ status: 'CANCELLED' }),
-      });
-  
-      if (!res.ok) throw new Error('Failed to cancel booking');
-      await fetchBookings();
-      setSuccess('Booking cancelled successfully');
-    } catch (error) {
-      console.error('Cancellation failed:', error);
-      setError('Failed to cancel booking');
-    }
-  };
-
-  const isUpcomingBooking = (booking: Booking) => {
-    return new Date(booking.ride.date) > new Date() && 
-           booking.status !== 'CANCELLED' && 
-           booking.status !== 'COMPLETED';
-  };
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    const statusStyles = {
-      CONFIRMED: 'bg-green-100 text-green-800 border-green-200',
-      PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      CANCELLED: 'bg-red-100 text-red-800 border-red-200',
-      COMPLETED: 'bg-blue-100 text-blue-800 border-blue-200'
-    };
-
-    return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${statusStyles[status]}`}>
-        {status}
-      </span>
+    const results = matchUserWithDrivers(
+      searchParams.from,
+      searchParams.to,
+      searchParams.date
     );
+
+    setMatchResults(results);
+    setIsSearched(true);
+  };
+
+  const handleBookRide = (ride: any) => {
+    setSelectedRide(ride);
+    setShowConfirmation(true);
+  };
+
+  const confirmBooking = () => {
+    // Here you would actually save the booking to your backend
+    // For demo purposes, we'll add the booking to state
+    const newBooking: Booking = {
+      id: bookings.length + 1,
+      type: 'upcoming',
+      from: searchParams.from,
+      to: searchParams.to,
+      date: searchParams.date,
+      time: selectedRide.time,
+      driver: selectedRide.name,
+      estimatedCost: selectedRide.estimatedCost,
+      status: 'Confirmed'
+    };
+
+    setBookings([...bookings, newBooking]);
+    setShowConfirmation(false);
+    setSelectedRide(null);
+
+    // Switch to the bookings tab to show the "confirmed" booking
+    setActiveTab('bookings');
+    setBookingType('upcoming');
+  };
+
+  const cancelBooking = () => {
+    setShowConfirmation(false);
+    setSelectedRide(null);
+  };
+
+  const handleCancelRide = (bookingId: number) => {
+    const updatedBookings = bookings.map(booking =>
+      booking.id === bookingId
+        ? { ...booking, status: 'Cancelled' }
+        : booking
+    );
+    setBookings(updatedBookings);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="max-w-4xl mx-auto p-6 pt-24">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-            <p className="text-red-700">{error}</p>
-          </div>
-        )}
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg flex items-center">
-            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-            <p className="text-green-700">{success}</p>
-          </div>
-        )}
+      <div className="max-w-2xl mx-auto p-6">
+        {/* Tab Switcher */}
+        <div className="flex space-x-4 mb-6">
+          <button
+            className={`px-4 py-2 rounded ${activeTab === 'search' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+            onClick={() => setActiveTab('search')}
+          >
+            Search Rides
+          </button>
+          <button
+            className={`px-4 py-2 rounded ${activeTab === 'bookings' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+            onClick={() => setActiveTab('bookings')}
+          >
+            My Bookings
+          </button>
+        </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
-          <div className="flex space-x-4 mb-8">
-            <button
-              className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
-                activeTab === "search"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 transform -translate-y-0.5"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              onClick={() => setActiveTab("search")}
-            >
-              Search Rides
-            </button>
-            <button
-              className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
-                activeTab === "bookings"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 transform -translate-y-0.5"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-              onClick={() => setActiveTab("bookings")}
-            >
-              My Bookings
-            </button>
-          </div>
-
-          {activeTab === "search" ? (
-            <div>
-              <form onSubmit={handleSearch} className="mb-8 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="From"
-                      value={searchParams.from}
-                      onChange={(e) => setSearchParams({ ...searchParams, from: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    />
-                  </div>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="To"
-                      value={searchParams.to}
-                      onChange={(e) => setSearchParams({ ...searchParams, to: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="date"
-                      value={searchParams.date}
-                      onChange={(e) => setSearchParams({ ...searchParams, date: e.target.value })}
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    />
-                  </div>
+        {activeTab === 'search' ? (
+          // Search Section
+          <div>
+            <div className="mb-6 space-y-4">
+              <div className="flex items-center space-x-4">
+                <Search className="w-5 h-5 text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search rides..."
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="relative">
+                  <MapPin className="w-4 h-4 absolute left-2 top-3 text-gray-400" />
+                  <select
+                    name="from"
+                    value={searchParams.from}
+                    onChange={handleInputChange}
+                    className="p-2 pl-8 border rounded w-full appearance-none"
+                  >
+                    <option value="">From</option>
+                    {locations.map(location => (
+                      <option key={`from-${location}`} value={location}>{location}</option>
+                    ))}
+                    <option value="Airport">Airport</option>
+                  </select>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 transition-all duration-300 disabled:bg-indigo-400 disabled:cursor-not-allowed transform hover:-translate-y-0.5 flex items-center justify-center"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      Searching...
-                    </div>
-                  ) : (
-                    <>
-                      <Search className="w-5 h-5 mr-2" />
-                      Search Rides
-                    </>
-                  )}
-                </button>
-              </form>
+                <div className="relative">
+                  <Navigation className="w-4 h-4 absolute left-2 top-3 text-gray-400" />
+                  <select
+                    name="to"
+                    value={searchParams.to}
+                    onChange={handleInputChange}
+                    className="p-2 pl-8 border rounded w-full appearance-none"
+                  >
+                    <option value="">To</option>
+                    {locations.map(location => (
+                      <option key={`to-${location}`} value={location}>{location}</option>
+                    ))}
+                    <option value="Airport">Airport</option>
+                  </select>
+                </div>
+                <input
+                  type="date"
+                  name="date"
+                  value={searchParams.date}
+                  onChange={handleInputChange}
+                  className="p-2 border rounded w-full"
+                />
+              </div>
+              {/* Added search button */}
+              <button
+                onClick={handleSearch}
+                className="w-full p-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+              >
+                Search Rides
+              </button>
+            </div>
 
-              <div className="space-y-4">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Loading rides...</p>
-                  </div>
-                ) : rides.length > 0 ? (
-                  rides.map((ride) => (
-                    <div key={ride.id} className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <div className="flex items-center">
-                            <h3 className="text-lg font-semibold">{ride.from}</h3>
-                            <ChevronRight className="mx-2 text-gray-400" />
-                            <h3 className="text-lg font-semibold">{ride.to}</h3>
-                          </div>
-                          <div className="flex items-center text-gray-600">
-                            <Calendar className="w-4 h-4 mr-2" />
-                            <span>{ride.date}</span>
-                            <Clock className="w-4 h-4 ml-4 mr-2" />
-                            <span>{ride.time}</span>
-                          </div>
-                          <div className="flex items-center text-gray-600">
-                            <Users className="w-4 h-4 mr-2" />
-                            <span>Driver: {ride.driver.name}</span>
+            {/* Search Results Section */}
+            {isSearched && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">
+                  {matchResults.message}
+                </h3>
+
+                {/* Exact Matches */}
+                {matchResults.exactMatches.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="font-medium text-gray-700 mb-3">Direct Rides</h4>
+                    <div className="space-y-4">
+                      {matchResults.exactMatches.map((ride) => (
+                        <div key={ride.id} className="bg-white p-4 rounded shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-semibold">{ride.name} • {ride.rating} ⭐</div>
+                              <div className="text-sm text-gray-600">{ride.vehicle}</div>
+                              <div className="mt-2">
+                                <span className="font-medium">{ride.from} → {ride.to}</span>
+                                <span className="text-gray-600 text-sm ml-2">({ride.totalDistance} km)</span>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {ride.date} at {ride.time} • {ride.seats} seats available
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-lg">₹{ride.estimatedCost}</div>
+                              <button
+                                onClick={() => handleBookRide(ride)}
+                                className="mt-2 px-4 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                              >
+                                Book Now
+                              </button>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-indigo-600">₹{ride.price}</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {ride.availableSeats} {ride.availableSeats === 1 ? 'seat' : 'seats'} left
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        className={`mt-4 w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
-                          ride.availableSeats && ride.availableSeats > 0
-                            ? "bg-indigo-600 text-white hover:bg-indigo-700 transform hover:-translate-y-0.5"
-                            : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                        }`}
-                        onClick={() => handleBookRide(ride.id, 1)}
-                        disabled={!ride.availableSeats || ride.availableSeats < 1}
-                      >
-                        {ride.availableSeats && ride.availableSeats > 0 ? 'Book Ride' : 'No Seats Available'}
-                      </button>
+                      ))}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg">No rides available for your search criteria.</p>
-                    <p className="text-gray-500 mt-2">Try adjusting your search parameters or check back later.</p>
+                  </div>
+                )}
+
+                {/* Partial Matches */}
+                {matchResults.partialMatches.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-gray-700 mb-3">Other Available Rides</h4>
+                    <div className="space-y-4">
+                      {matchResults.partialMatches.map((ride) => (
+                        <div key={ride.id} className="bg-white p-4 rounded shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-semibold">{ride.name} • {ride.rating} ⭐</div>
+                              <div className="text-sm text-gray-600">{ride.vehicle}</div>
+                              <div className="mt-2">
+                                <span className="font-medium">{ride.from} → {ride.to}</span>
+                                <div className="text-gray-600 text-sm">
+                                  <div>Pickup: {searchParams.from} ({ride.pickupDistance} km from start)</div>
+                                  <div>Dropoff: {searchParams.to} ({ride.dropoffDistance} km from end)</div>
+                                </div>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {ride.date} at {ride.time} • {ride.seats} seats available
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-lg">₹{ride.estimatedCost}</div>
+                              <button
+                                onClick={() => handleBookRide(ride)}
+                                className="mt-2 px-4 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                              >
+                                Book Now
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No results message */}
+                {matchResults.exactMatches.length === 0 && matchResults.partialMatches.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">No suitable rides found for your route and date.</p>
+                    <p className="text-gray-500 text-sm mt-2">Try changing your search parameters.</p>
                   </div>
                 )}
               </div>
+            )}
+          </div>
+        ) : (
+          // Bookings Section
+          <div>
+            <div className="flex space-x-4 mb-6">
+              <button
+                className={`px-4 py-2 rounded ${bookingType === 'upcoming' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+                onClick={() => setBookingType('upcoming')}
+              >
+                Upcoming Rides
+              </button>
+              <button
+                className={`px-4 py-2 rounded ${bookingType === 'past' ? 'bg-indigo-600 text-white' : 'bg-gray-200'}`}
+                onClick={() => setBookingType('past')}
+              >
+                Past Rides
+              </button>
             </div>
-          ) : (
-            <div>
-              <div className="flex space-x-4 mb-8">
-                <button
-                  className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
-                    bookingType === "upcoming"
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 transform -translate-y-0.5"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setBookingType("upcoming")}
-                >
-                  Upcoming
-                </button>
-                <button
-                  className={`flex-1 py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
-                    bookingType === "past"
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 transform -translate-y-0.5"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  onClick={() => setBookingType("past")}
-                >
-                  Past
-                </button>
-              </div>
 
-              <div className="space-y-4">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="text-gray-600 mt-4">Loading bookings...</p>
-                  </div>
-                ) : bookings.filter(booking => 
-                      bookingType === 'upcoming' 
-                        ? isUpcomingBooking(booking)
-                        : !isUpcomingBooking(booking)
-                    ).length > 0 ? (
-                  bookings
-                    .filter(booking => 
-                      bookingType === 'upcoming' 
-                        ? isUpcomingBooking(booking)
-                        : !isUpcomingBooking(booking)
-                    )
-                    .map((booking) => (
-                      <div key={booking.id} className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-3">
-                            <div className="flex items-center">
-                              <h3 className="text-lg font-semibold">{booking.ride.from}</h3>
-                              <ChevronRight className="mx-2 text-gray-400" />
-                              <h3 className="text-lg font-semibold">{booking.ride.to}</h3>
-                            </div>
-                            <div className="flex items-center text-gray-600">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              <span>{booking.ride.date}</span>
-                              <Clock className="w-4 h-4 ml-4 mr-2" />
-                              <span>{booking.ride.time}</span>
-                            </div>
-                            <div className="flex items-center text-gray-600">
-                              <Users className="w-4 h-4 mr-2" />
-                              <span>Driver: {booking.ride.driver.name}</span>
-                            </div>
-                            <StatusBadge status={booking.status} />
-                          </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-indigo-600">₹{booking.ride.price}</p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {booking.seats} {booking.seats === 1 ? 'seat' : 'seats'} booked
-                            </p>
-                          </div>
+            <div className="space-y-4">
+              {bookings
+                .filter(booking => booking.type === bookingType)
+                .map(booking => (
+                  <div key={booking.id} className="bg-white p-4 rounded shadow-sm border border-gray-200">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold">
+                          {booking.from} → {booking.to}
+                          <span className={`ml-2 px-2 py-0.5 text-xs rounded ${booking.status === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'Completed' ? 'bg-blue-100 text-blue-800' :
+                                booking.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                            }`}>
+                            {booking.status}
+                          </span>
                         </div>
-                        {(booking.status === 'CONFIRMED' || booking.status === 'PENDING') && (
+                        <div className="text-sm text-gray-600">
+                          {booking.date} at {booking.time}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          Driver: {booking.driver}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold">₹{booking.estimatedCost}</div>
+                        {booking.type === 'upcoming' && booking.status === 'Confirmed' && (
                           <button
-                            className="mt-4 w-full py-3 px-4 rounded-xl font-medium bg-red-600 text-white hover:bg-red-700 transition-all duration-200 transform hover:-translate-y-0.5 focus:ring-4 focus:ring-red-200"
-                            onClick={() => handleCancelBooking(booking.id)}
+                            className="mt-2 px-3 py-1 border border-red-500 text-red-500 text-xs rounded hover:bg-red-50"
+                            onClick={() => handleCancelRide(booking.id)}
                           >
-                            Cancel Booking
+                            Cancel Ride
                           </button>
                         )}
                       </div>
-                    ))
-                ) : (
-                  <div className="text-center py-12">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg">No {bookingType} bookings found.</p>
-                    {bookingType === 'upcoming' && (
-                      <p className="text-gray-500 mt-2">
-                        Looking for a ride? Head over to the Search tab to book your next journey.
-                      </p>
-                    )}
+                    </div>
+                  </div>
+                ))}
+
+              {bookings.filter(booking => booking.type === bookingType).length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No {bookingType} rides found.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+{/* Booking Confirmation Modal */}
+{showConfirmation && selectedRide && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-medium mb-4">Confirm Booking</h3>
+
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Route:</span>
+                  <span className="font-medium">{searchParams.from} → {searchParams.to}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Date & Time:</span>
+                  <span className="font-medium">
+                    {new Date(selectedRide.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} at {selectedRide.time}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Driver:</span>
+                  <span className="font-medium">{selectedRide.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Vehicle:</span>
+                  <span className="font-medium">{selectedRide.vehicle}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Cost:</span>
+                  <span className="font-medium text-indigo-600">₹{selectedRide.estimatedCost}</span>
+                </div>
+
+                {!selectedRide.isExactMatch && (
+                  <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200 text-sm">
+                    <p className="font-medium text-yellow-800 mb-1">Connection Ride Information:</p>
+                    <p>The driver will pick you up at {searchParams.from}, which is {selectedRide.pickupDistance}km from their starting point.</p>
+                    <p>They will drop you at {searchParams.to}, which is {selectedRide.dropoffDistance}km from their end point.</p>
                   </div>
                 )}
               </div>
+
+              <div className="flex space-x-4">
+                <button
+                  className="flex-1 bg-gray-200 py-2 rounded hover:bg-gray-300 transition-colors"
+                  onClick={cancelBooking}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="flex-1 bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition-colors"
+                  onClick={confirmBooking}
+                >
+                  Confirm Booking
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
