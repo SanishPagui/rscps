@@ -1,8 +1,8 @@
+@import 'stream-chat-react/dist/css/v2/index.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import '~stream-chat-react/dist/css/v2/index.css';
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -113,12 +113,12 @@ input[type='radio'] {
   @apply bg-white p-3 w-full h-full;
   content: '';
 
-  background: url('../assets/discord-black.svg') no-repeat center center, white;
+  background: url('../assets/discord-black.png') no-repeat center center, white;
   background-origin: content-box;
 }
 
 .discord-icon:hover {
-  background: url('../assets/discord-white.svg') no-repeat center center,
+  background: url('../assets/discord-white.png') no-repeat center center,
     var(--discord-purple);
   background-origin: content-box;
   --offset: 1.5rem;

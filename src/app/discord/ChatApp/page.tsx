@@ -7,7 +7,7 @@ import { auth } from '../../firebase/config';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import MyChat from '../../components/MyChat';
+import MyChat from '../../components/MyChat/MyChat';
 import LocomotiveScroll from 'locomotive-scroll';
 
 const STREAM_API_KEY = 'ctpgdqf3h24c';
